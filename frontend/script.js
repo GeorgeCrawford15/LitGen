@@ -1,5 +1,5 @@
 const defaultSettings = {
-	aiEndpoint: "http://localhost:5000/api/generate",
+	aiEndpoint: "http://localhost:5001/api/generate",
 	aiKey: "AIzaSyAFLeHoCxPct0K6Rv5BtX57cM88UIA_oNg",
 	aiModel: "gemini-1.5-pro",
 	pubmedKey: "",
@@ -35,6 +35,9 @@ const dom = {
 	tutorial: document.getElementById("tutorial"),
 	tutorialClose: document.getElementById("tutorial-close"),
 	tutorialHide: document.getElementById("tutorial-hide"),
+    reviewTypeSelector: document.getElementById("review-type-selector"),
+    citationsPanel: document.getElementById("citations-list"),
+    citationEntries: document.getElementById("citation-entries"),
 };
 
 function loadSettings() {
@@ -125,20 +128,71 @@ function renderPapers(papers) {
 		return;
 	}
 	papers.forEach((p) => {
-		const pill = document.createElement("span");
+		const pill = document.createElement("a");
 		pill.className = "pill";
 		pill.textContent = p.title;
 		pill.title = p.source || "";
+        if (p.link) {
+            pill.href = p.link;
+            pill.target = "_blank";
+            pill.rel = "noopener noreferrer";
+        }
 		dom.papersList.appendChild(pill);
 	});
 }
 
+function renderCitations(papers) {
+    dom.citationEntries.innerHTML = "";
+    if (!papers.length || !dom.citationsPanel) {
+        dom.citationsPanel?.classList.add("hidden");
+        return;
+    }
+    papers.forEach((p) => {
+        const li = document.createElement("li");
+        
+        // Citation Text (Title + DOI if available)
+        let citationText = `${p.source}: ${p.title}`;
+        if (p.doi) {
+            citationText += ` (DOI: ${p.doi})`;
+        } else if (p.link && p.source === 'arXiv') {
+            // Use arXiv ID as a fallback identifier if DOI is missing
+            citationText += ` (arXiv ID: ${p.link.split('/').pop()})`;
+        }
+        
+        // Link wrapper (uses p.link for the URL)
+        const link = document.createElement("a");
+        link.href = p.link || "#"; // Use # if link is null
+        link.textContent = citationText;
+        link.target = "_blank";
+        li.appendChild(link);
+
+        // Copy Button
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "copy-citation-btn ghost-btn";
+        copyBtn.textContent = "📋";
+        copyBtn.title = "Copy individual citation";
+        copyBtn.addEventListener("click", () => {
+            const textToCopy = link.textContent;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    copyBtn.textContent = "✅";
+                    setTimeout(() => copyBtn.textContent = "📋", 1500);
+                });
+            }
+        });
+        
+        li.appendChild(copyBtn);
+        dom.citationEntries.appendChild(li);
+    });
+    dom.citationsPanel.classList.remove("hidden");
+}
+
 function renderSummary(text) {
-	dom.summary.textContent = text;
+	dom.summary.innerHTML = marked.parse(text);
 	dom.summary.classList.remove("placeholder");
 }
 
-function renderExtractions(items) {
+/*function renderExtractions(items) {
 	dom.extractions.innerHTML = "";
 	if (!items.length) {
 		dom.extractions.innerHTML = '<li class="placeholder">No extractions yet.</li>';
@@ -149,7 +203,7 @@ function renderExtractions(items) {
 		li.textContent = item;
 		dom.extractions.appendChild(li);
 	});
-}
+}*/
 
 function mockPapers(query) {
 	return [
@@ -164,7 +218,7 @@ async function fetchPubMed(query, key) {
 	url.searchParams.set("db", "pubmed");
 	url.searchParams.set("term", query);
 	url.searchParams.set("retmode", "json");
-	url.searchParams.set("retmax", "5");
+	url.searchParams.set("retmax", "10");
 	if (key) url.searchParams.set("api_key", key);
 	const res = await fetch(url.toString());
 	const data = await res.json();
@@ -174,7 +228,7 @@ async function fetchPubMed(query, key) {
 
 async function fetchArxiv(query) {
 	// Use backend proxy to avoid CORS
-	const res = await fetch("http://localhost:5000/api/papers", {
+	const res = await fetch("http://localhost:5001/api/papers", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ query })
@@ -221,66 +275,67 @@ async function getPapers(query) {
 }
 
 async function callAI(prompt) {
-	const endpoint = state.settings.aiEndpoint.trim();
-	const model = state.settings.aiModel || "";
-	if (!endpoint) {
-		return "This is a mock AI summary. Connect your AI API in Settings to get live summaries.";
-	}
-	const isBackendProxy = endpoint.includes("/api/generate") || endpoint.startsWith("/api/");
-	const isGemini = endpoint.includes("generativelanguage.googleapis.com");
-	try {
-		if (isBackendProxy) {
-			const res = await fetch(endpoint, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ prompt, maxTokens: 1000, model }),
-			});
-			const data = await res.json();
-			if (!res.ok || data.error) {
-				const msg = data.error ? `${data.error}: ${data.details || data.payload || ""}` : res.statusText;
-				setStatus(`AI error: ${msg}`);
-				throw new Error(msg || "AI error");
-			}
-			const text = data.text || data.output || "No response";
-			return text;
-		}
-		if (isGemini) {
-			const url = `${endpoint}?key=${encodeURIComponent(key)}`;
-			const res = await fetch(url, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					contents: [{ parts: [{ text: prompt }] }],
-					generationConfig: { maxOutputTokens: 600 },
-				}),
-			});
-			const data = await res.json();
-			const text = data.candidates?.[0]?.content?.parts?.[0]?.text || data.output || "No response";
-			return text;
-		}
-		const res = await fetch(endpoint, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${key}`,
-			},
-			body: JSON.stringify({
-				model,
-				messages: [{ role: "user", content: prompt }],
-				max_tokens: 600,
-			}),
-		});
-		const data = await res.json();
-		const text = data.choices?.[0]?.message?.content || data.output || "No response";
-		return text;
-	} catch (e) {
-		console.warn("AI API failed; using mock", e);
-		setStatus("AI error; showing mock summary.");
-		return "This is a mock AI summary. Connect your AI API in Settings to get live summaries.";
-	}
+    const endpoint = state.settings.aiEndpoint.trim();
+    const model = state.settings.aiModel || "";
+    if (!endpoint) {
+        return "This is a mock AI summary. Connect your AI API in Settings to get live summaries.";
+    }
+    const isBackendProxy = endpoint.includes("/api/generate") || endpoint.startsWith("/api/");
+    const isGemini = endpoint.includes("generativelanguage.googleapis.com");
+    try {
+        if (isBackendProxy) {
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                // *** REVISION: Removed maxTokens from the body! ***
+                body: JSON.stringify({ prompt, model }), 
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                const msg = data.error ? `${data.error}: ${data.details || data.payload || ""}` : res.statusText;
+                setStatus(`AI error: ${msg}`);
+                throw new Error(msg || "AI error");
+            }
+            const text = data.text || data.output || "No response";
+            return text;
+        }
+        if (isGemini) {
+            const url = `${endpoint}?key=${encodeURIComponent(key)}`;
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { maxOutputTokens: 600 },
+                }),
+            });
+            const data = await res.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || data.output || "No response";
+            return text;
+        }
+        const res = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${key}`,
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: prompt }],
+                max_tokens: 600,
+            }),
+        });
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content || data.output || "No response";
+        return text;
+    } catch (e) {
+        console.warn("AI API failed; using mock", e);
+        setStatus("AI error; showing mock summary.");
+        return "This is a mock AI summary. Connect your AI API in Settings to get live summaries.";
+    }
 }
 
-async function buildExtraction(summary) {
+/*async function buildExtraction(summary) {
 	const endpoint = state.settings.aiEndpoint.trim();
 	const model = state.settings.aiModel || "";
 	if (!endpoint) {
@@ -322,7 +377,7 @@ Format: Start each point with • and be specific with numbers/names when availa
 			const res = await fetch(endpoint, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ prompt, maxTokens: 800, model }),
+				body: JSON.stringify({ prompt, model }),
 			});
 			const data = await res.json();
 			if (!res.ok || data.error) {
@@ -385,52 +440,74 @@ Format: Start each point with • and be specific with numbers/names when availa
 		"• Data: Mock extraction pending live AI.",
 		"• Conclusions: Mock extraction pending live AI.",
 	];
-}
+}*/
 
+// NEW, SIMPLIFIED handleSearch FUNCTION in script.js
 async function handleSearch(event) {
-	event.preventDefault();
-	const query = dom.queryInput.value.trim();
-	if (!query) return;
-	showResultsBubble();
-	setStatus("Searching databases...");
-	dom.resultsBubble?.scrollIntoView({ behavior: "smooth", block: "start" });
-	renderSummary("Searching...");
-	renderExtractions([]);
-	renderPapers([]);
-	try {
-		const papers = await getPapers(query);
-		renderPapers(papers);
-		setStatus("Running AI summary...");
-		const joined = papers.map((p) => p.title).join("\n- ");
-		const summary = await callAI(`You are a research literature review assistant. Analyze these actual research papers about "${query}" and provide a detailed academic summary.
+    event.preventDefault();
+    const query = dom.queryInput.value.trim();
+    if (!query) return;
+
+    // 1. Initial UI Setup
+    showResultsBubble();
+    setStatus("Searching databases...");
+    dom.resultsBubble?.scrollIntoView({ behavior: "smooth", block: "start" });
+    renderSummary("Searching...");
+    // renderExtractions([]); // Clears old extractions (assuming you keep the HTML element)
+    renderPapers([]);
+
+    try {
+        // 2. Fetch Papers
+        const papers = await getPapers(query);
+        renderPapers(papers);
+        renderCitations(papers);
+        setStatus("Running AI summary...");
+        const joined = papers.map((p) => p.title).join("\n- ");
+        
+        // 3. Make the SINGLE API Call for the Summary with the NEW PROMPT
+        const reviewType = dom.reviewTypeSelector ? dom.reviewTypeSelector.value : "narrative";
+        let typeInstruction = "";
+        switch (reviewType) {
+            case "systematic":
+                typeInstruction = "Conduct a SYSTEMATIC review. Focus on a structured synthesis of the evidence. Explicitly state selection criteria (implied), assess the quality of studies, and synthesize findings quantitatively or qualitatively with a focus on comprehensive coverage and minimizing bias.";
+                break;
+            case "critical":
+                typeInstruction = "Conduct a CRITICAL review. Go beyond description to extensively evaluate and analyze the papers. Identify contradictions, strengths, weaknesses, and gaps in the current research. Challenge prevailing assumptions and propose new conceptual frameworks or perspectives.";
+                break;
+            case "narrative":
+            default:
+                typeInstruction = "Conduct a NARRATIVE review. Provide a broad overview of the topic. Connect the papers in a storytelling manner to describe the current state of knowledge, highlighting key themes and theoretical evolution without necessarily following a strict protocol.";
+                break;
+        }
+
+        const summary = await callAI(`You are a research literature review assistant writing a scholarly literature review essay.
+---
+**INSTRUCTIONS FOR OUTPUT FORMAT:**
+1.  **Do not use any Markdown formatting characters.** This includes \#, \##, \*\*, \*, \-, \_\_ or any other special characters for headings, bolding, italics, or lists.
+2.  Write the output entirely in **continuous essay prose** with clear paragraphs, suitable for a formal journal.
+3.  The text must *not* contain any Roman numerals, single dashes, or bullet points. All points must be integrated into the essay structure.
+4.  Maintain a detailed, comprehensive, and professional academic tone.
+5.  **REVIEW TYPE INSTRUCTION:** ${typeInstruction}
+---
+Analyze the following research papers about "${query}" and provide a detailed, comprehensive literature review essay.
 
 Research Papers:
-- ${joined}
+- ${joined}`);
 
-Provide a comprehensive summary that includes:
-1. **Research Focus**: What specific aspects of ${query} do these papers investigate?
-2. **Methodologies**: What research methods, techniques, or approaches are employed (e.g., machine learning models, clinical trials, computational frameworks)?
-3. **Key Findings**: What are the specific discoveries, innovations, or results? Include any numerical data, accuracy metrics, or statistical findings mentioned in titles.
-4. **Impact & Applications**: What are the clinical, practical, or theoretical implications?
-
-Write in a professional academic tone. Be specific and substantive, not generic.`);
-		renderSummary(summary);
-		setStatus("Extracting key fields...");
-		const extractions = await buildExtraction(summary);
-		renderExtractions(extractions);
-		setStatus("Done");
-	} catch (e) {
-		console.error(e);
-		setStatus("Something went wrong. Showing mock data.");
-		renderPapers(mockPapers(query));
-		renderSummary("Mock summary. Connect an AI API to enable live results.");
-		renderExtractions([
-			"• Methods: Not available in mock mode.",
-			"• Results: Not available in mock mode.",
-			"• Data: Not available in mock mode.",
-			"• Conclusions: Not available in mock mode.",
-		]);
-	}
+        // 4. Render Summary and Finish
+        renderSummary(summary);
+        
+        // REMOVED EXTRACTION LOGIC:
+        
+        setStatus("Done"); // Now the status updates right after the successful summary
+    } catch (e) {
+        // 5. Error Handling / Mock Fallback
+        console.error(e);
+        setStatus("Something went wrong. Showing mock data.");
+        renderPapers(mockPapers(query));
+        renderSummary("Mock summary. Connect an AI API to enable live results.");
+        // renderExtractions([]); // Render empty or just clear the section
+    }
 }
 
 function handleSettingsSubmit(event) {
@@ -446,6 +523,7 @@ function handleSettingsSubmit(event) {
 	saveSettings();
 	updateSettingsGlow();
 	setStatus("Settings saved.");
+	dom.settingsPanel?.classList.add("hidden");
 }
 
 function handleResetSettings() {
@@ -490,4 +568,12 @@ function init() {
 	setStatus("Idle. Add your API keys in Settings or use mock mode.");
 }
 
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("DOMContentLoaded", () => {
+    init();
+    const searchForm = document.getElementById('search-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', () => {
+            document.querySelector('.container').classList.add('expanded');
+        });
+    }
+});

@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>LitGen</title>
         <link rel="stylesheet" href="style.css">
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
         <script src="script.js" defer></script>
     </head>
     <body>
@@ -28,14 +29,16 @@
                 <div class="results-bubble-body">
                     <div class="bubble-col">
                         <h4>AI summary</h4>
-                        <p id="summary-text" class="placeholder">Run a search to see the summary.</p>
+                        <div id="summary-text" class="summary-content placeholder">Run a search to see the summary.</div>
                     </div>
+                    <!--
                     <div class="bubble-col">
                         <h4>Key extractions</h4>
                         <ul id="extractions" class="extractions-list">
                             <li class="placeholder">Methods, Results, Data, and Conclusions will appear here.</li>
                         </ul>
                     </div>
+                    -->
                     <div class="bubble-col">
                         <h4>Sources</h4>
                         <div id="papers-list" class="pill-list"></div>
@@ -43,6 +46,11 @@
                 </div>
             </div>
             <form class="search-box" id="search-form">
+                <select id="review-type-selector" style="padding: 10px; border: none; border-bottom: 1px solid var(--line); background: transparent; font-family: inherit; outline: none; color: var(--fg); cursor: pointer;">
+                    <option value="narrative" selected>Narrative</option>
+                    <option value="systematic">Systematic</option>
+                    <option value="critical">Critical</option>
+                </select>
                 <input
                     id="query-input"
                     type="search"
@@ -53,6 +61,13 @@
                 <button type="submit">Generate Literature Review</button>
             </form>
         </div>
+
+        <section class="citations hidden" id="citations-list">
+            <div class="citation-header">
+                <h2>Citations for Review</h2>
+            </div>
+            <ol id="citation-entries" class="citation-entries"></ol>
+        </section>
 
         <section class="settings hidden" id="settings">
             <div class="settings-header">

@@ -114,6 +114,11 @@ main, body {
     margin: 26px auto 6px;
     padding: 0 20px;
     position: relative;
+    transition: max-width 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.container.expanded {
+    max-width: 1200px;
 }
 
 .search-box {
@@ -216,30 +221,55 @@ main, body {
     gap: 14px;
 }
 
+.container.expanded .results-bubble-body {
+    grid-template-columns: 1fr 200px;
+    gap: 32px;
+}
+
 .bubble-col h4 {
     margin-bottom: 6px;
     font-size: 1rem;
 }
 
-.bubble-col p {
+.summary-content {
     min-height: 48px;
     max-height: 180px;
     overflow-y: auto;
     padding-right: 8px;
+    transition: max-height 0.5s ease;
+    color: var(--muted);
 }
 
-.bubble-col p::-webkit-scrollbar,
+.summary-content p {
+    margin-bottom: 10px;
+}
+
+.summary-content ul, .summary-content ol {
+    margin-bottom: 10px;
+    padding-left: 1.2em;
+}
+
+.summary-content strong {
+    color: var(--fg);
+}
+
+.container.expanded .summary-content {
+    max-height: 600px;
+    font-size: 1.1rem;
+}
+
+.summary-content::-webkit-scrollbar,
 .bubble-col ul::-webkit-scrollbar {
     width: 6px;
 }
 
-.bubble-col p::-webkit-scrollbar-track,
+.summary-content::-webkit-scrollbar-track,
 .bubble-col ul::-webkit-scrollbar-track {
     background: var(--line);
     border-radius: 3px;
 }
 
-.bubble-col p::-webkit-scrollbar-thumb,
+.summary-content::-webkit-scrollbar-thumb,
 .bubble-col ul::-webkit-scrollbar-thumb {
     background: var(--muted);
     border-radius: 3px;
@@ -263,6 +293,47 @@ main, body {
 }
 
 .free-apis-callout { display: none; }
+
+/* New Citations Section Styling */
+.citations {
+    max-width: 760px;
+    margin: 24px auto 14px;
+    padding: 20px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+.citations.hidden { display: none; }
+
+.citation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+
+.citation-header h2 { font-size: 1.2rem; letter-spacing: -0.01em; }
+
+.citation-entries { list-style-type: decimal; padding-left: 20px; color: var(--muted); font-size: 0.95rem; line-height: 1.8; }
+
+.citation-entries a { font-weight: 600; text-decoration: none; border-bottom: 1px dashed var(--line); }
+
+/* New CSS for the individual citation copy button */
+.citation-entries li {
+    display: flex; /* Align link and button horizontally */
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.citation-entries li a { 
+    flex-grow: 1; /* Allow the link text to take up most of the space */ 
+    word-break: break-word; 
+}
+
+.copy-citation-btn { 
+    /* Inherits general styling from .ghost-btn */
+    font-size: 0.8rem; 
+    padding: 4px 8px; 
+    flex-shrink: 0; /* Prevents button from shrinking */ 
+    margin-left: 10px; 
+}
 
 /* Settings */
 .settings {
@@ -654,18 +725,57 @@ main, body {
 }
 
 .pill-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: block;
+    max-height: 150px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.pill-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.pill-list::-webkit-scrollbar-track {
+    background: var(--line);
+    border-radius: 3px;
+}
+
+.pill-list::-webkit-scrollbar-thumb {
+    background: var(--muted);
+    border-radius: 3px;
 }
 
 .pill {
     background: #f1f1f1;
-    border-radius: 999px;
-    padding: 7px 12px;
+    border-radius: 8px;
+    padding: 8px 12px;
     font-size: 0.9rem;
     color: var(--fg);
     border: 1px solid var(--line);
+    transition: border-radius 0.3s ease, background 0.2s ease;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    margin-bottom: 5px;
+    text-align: left;
+    white-space: normal;
+    line-height: 1.4;
+}
+
+.container.expanded .pill {
+    border-radius: 6px;
+    text-align: left;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    height: auto;
+    line-height: 1.4;
+    padding: 8px 12px;
+}
+
+.container.expanded .pill-list {
+    display: block;
+    max-height: 600px;
 }
 
 .placeholder {
@@ -784,6 +894,10 @@ main, body {
     }
     .search-box button {
         width: 100%;
+    }
+    
+    .container.expanded .results-bubble-body {
+        grid-template-columns: 1fr;
     }
 }
 @media (max-width: 768px) {
