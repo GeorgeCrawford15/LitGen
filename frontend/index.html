@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>LitGen</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="script.js" defer></script>
+    </head>
+    <body>
+        <header class="topbar">
+            <div class="brand">LitGen</div>
+            <div class="top-actions">
+                <button id="dark-toggle" class="ghost-btn" aria-label="Toggle dark mode">●</button>
+                <a href="#settings" class="settings-pill" id="settings-indicator">Settings</a>
+            </div>
+        </header>
+        <div id="app">
+            <h1>Welcome to LitGen, Your Literature Review Workspace</h1>
+            <p>AI-Generated summaries of summaries and high impact research grounded with citations</p>
+        </div>
+        <div class="container">
+            <div class="results-bubble collapsed" id="results-bubble">
+                <div class="results-bubble-header">
+                    <span class="label">Live output</span>
+                    <span id="status" class="status-chip">Idle</span>
+                </div>
+                <div class="results-bubble-body">
+                    <div class="bubble-col">
+                        <h4>AI summary</h4>
+                        <p id="summary-text" class="placeholder">Run a search to see the summary.</p>
+                    </div>
+                    <div class="bubble-col">
+                        <h4>Key extractions</h4>
+                        <ul id="extractions" class="extractions-list">
+                            <li class="placeholder">Methods, Results, Data, and Conclusions will appear here.</li>
+                        </ul>
+                    </div>
+                    <div class="bubble-col">
+                        <h4>Sources</h4>
+                        <div id="papers-list" class="pill-list"></div>
+                    </div>
+                </div>
+            </div>
+            <form class="search-box" id="search-form">
+                <input
+                    id="query-input"
+                    type="search"
+                    placeholder="Enter a research topic..."
+                    name="query"
+                    required
+                >
+                <button type="submit">Generate Literature Review</button>
+            </form>
+        </div>
+
+        <section class="settings hidden" id="settings">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <p>Plug in your own APIs or use the built-in mock mode.</p>
+                <div class="settings-glow" aria-hidden="true"></div>
+            </div>
+            <form id="settings-form" class="settings-form">
+                <div class="settings-group">
+                    <h3>AI API</h3>
+                    <label>Endpoint (POST)<input type="url" id="ai-endpoint" placeholder="https://api.your-ai.com/v1/generate"></label>
+                    <label>API Key<input type="password" id="ai-key" placeholder="sk-..." autocomplete="off"></label>
+                    <label>Model<input type="text" id="ai-model" placeholder="gemini-1.5-pro"></label>
+                </div>
+                <div class="settings-group">
+                    <h3>Database APIs</h3>
+                    <label>PubMed API Key<input type="text" id="pubmed-key" placeholder="Your PubMed key"></label>
+                    <label>arXiv Endpoint<input type="url" id="arxiv-endpoint" placeholder="https://export.arxiv.org/api/query"></label>
+                    <label>Custom Database Endpoint<input type="url" id="custom-db" placeholder="https://api.your-db.com/search"></label>
+                </div>
+                <div class="settings-actions">
+                    <button type="submit">Save Settings</button>
+                    <button type="button" id="reset-settings" class="secondary">Reset to Mock</button>
+                </div>
+            </form>
+        </section>
+        <!-- Tutorial Overlay -->
+        <div id="tutorial" class="tutorial hidden" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+            <div class="tutorial-card">
+                <h3 id="tutorial-title">Quick start: free AI lit review</h3>
+                <ol>
+                    <li>Enter a topic in the search box.</li>
+                    <li>Open Settings (glowing pill) and paste a free API: Gemini or OpenAI (free tier).</li>
+                    <li>Add free database APIs: PubMed key, arXiv endpoint, Semantic Scholar.</li>
+                    <li>Save, then click Generate — we fetch papers, summarize, and extract Methods/Results/Data/Conclusions.</li>
+                </ol>
+                <div class="tutorial-links">
+                    <a href="https://ai.google.dev/" target="_blank">Gemini API</a>
+                    <a href="https://platform.openai.com/signup" target="_blank">OpenAI free tier</a>
+                    <a href="https://www.ncbi.nlm.nih.gov/home/develop/api/" target="_blank">PubMed API</a>
+                    <a href="https://info.arxiv.org/help/api/index.html" target="_blank">arXiv API</a>
+                    <a href="https://www.semanticscholar.org/product/api" target="_blank">Semantic Scholar API</a>
+                </div>
+                <div class="tutorial-actions">
+                    <label class="remember">
+                        <input type="checkbox" id="tutorial-hide">
+                        Don't show again
+                    </label>
+                    <button id="tutorial-close">Got it</button>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
