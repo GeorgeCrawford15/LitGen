@@ -9,9 +9,6 @@ from dotenv import load_dotenv
 load_dotenv()
 FlaskReturn = Union[Response, Tuple[Response, int]]
 
-# Use env var if provided; otherwise fall back to the baked-in key so it works out of the box.
-# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyD0ABfEA2_N2yYvSrEnvaMAzCp_y0w2ZNs")
-
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
@@ -46,7 +43,6 @@ def call_gemini(prompt: str, max_tokens: int = 65535, model: str | None = None):
         "generationConfig": {"maxOutputTokens": max_tokens},
     }
 
-    print(f"[DEBUG] Full API Key: {GEMINI_API_KEY}")
     # Model is already baked into GEMINI_ENDPOINT, ignore model parameter
     resp = requests.post(url, headers=headers, json=body, timeout=45)
 

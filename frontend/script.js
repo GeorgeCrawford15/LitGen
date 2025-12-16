@@ -1,6 +1,6 @@
 const defaultSettings = {
 	aiEndpoint: "http://localhost:5001/api/generate",
-	aiKey: "AIzaSyAFLeHoCxPct0K6Rv5BtX57cM88UIA_oNg",
+	aiKey: "backend-managed",
 	aiModel: "gemini-1.5-pro",
 	pubmedKey: "",
 	arxivEndpoint: "https://export.arxiv.org/api/query",
@@ -38,6 +38,7 @@ const dom = {
     reviewTypeSelector: document.getElementById("review-type-selector"),
     citationsPanel: document.getElementById("citations-list"),
     citationEntries: document.getElementById("citation-entries"),
+    copySummaryButton: document.getElementById("copy-summary"),
 };
 
 function loadSettings() {
@@ -335,114 +336,6 @@ async function callAI(prompt) {
     }
 }
 
-/*async function buildExtraction(summary) {
-	const endpoint = state.settings.aiEndpoint.trim();
-	const model = state.settings.aiModel || "";
-	if (!endpoint) {
-		return [
-			"• Methods: Mock extraction pending live AI.",
-			"• Results: Mock extraction pending live AI.",
-		"• Data: Mock extraction pending live AI.",
-		"• Conclusions: Mock extraction pending live AI.",
-	];
-	}
-	const prompt = `You are extracting key information from a research literature summary. Analyze the following summary and extract specific details in bullet-point format.
-
-RESEARCH SUMMARY:
-${summary}
-
-EXTRACT THE FOLLOWING (use bullet points starting with •):
-
-**Methods & Techniques:**
-- List specific methodologies, algorithms, frameworks, or experimental approaches mentioned
-- Include technical details like model types, tools, or protocols
-
-**Results & Findings:**
-- Extract quantitative results: accuracy percentages, sample sizes, statistical measures, performance metrics
-- Include qualitative findings and key discoveries
-
-**Data & Measurements:**
-- Report datasets used, patient cohorts, sample sizes, timeframes
-- Include any measurements, biomarkers, or variables studied
-
-**Conclusions & Implications:**
-- Summarize main conclusions drawn by researchers
-- Note clinical applications, future directions, or practical impact
-
-Format: Start each point with • and be specific with numbers/names when available.`;
-	const isBackendProxy = endpoint.includes("/api/generate") || endpoint.startsWith("/api/");
-	const isGemini = endpoint.includes("generativelanguage.googleapis.com");
-	try {
-		if (isBackendProxy) {
-			const res = await fetch(endpoint, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ prompt, model }),
-			});
-			const data = await res.json();
-			if (!res.ok || data.error) {
-				const msg = data.error ? `${data.error}: ${data.details || data.payload || ""}` : res.statusText;
-				setStatus(`AI error: ${msg}`);
-				throw new Error(msg || "AI error");
-			}
-			const text = data.text || data.output || "";
-			if (text) {
-				let lines = text.split(/\n+/).filter(line => {
-				const trimmed = line.trim();
-				// Filter out empty lines and section headers
-				return trimmed && !trimmed.match(/^\*\*.*\*\*:?$/) && trimmed.length > 3;
-			});
-			// Ensure bullet points
-			lines = lines.map(line => {
-				const trimmed = line.trim();
-				return trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')
-					? (trimmed.startsWith('•') ? trimmed : '• ' + trimmed.substring(1).trim())
-					: '• ' + trimmed;
-			});
-			return lines.slice(0, 12);
-			}
-		}
-		if (isGemini) {
-			const url = `${endpoint}?key=${encodeURIComponent(key)}`;
-			const res = await fetch(url, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					contents: [{ parts: [{ text: prompt }] }],
-					generationConfig: { maxOutputTokens: 400 },
-				}),
-			});
-			const data = await res.json();
-			const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-			if (text) return text.split(/\n+/).filter(Boolean).slice(0, 6);
-		}
-		const res = await fetch(endpoint, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${key}`,
-			},
-			body: JSON.stringify({
-				model,
-				messages: [{ role: "user", content: prompt }],
-				max_tokens: 400,
-			}),
-		});
-		const data = await res.json();
-		const text = data.choices?.[0]?.message?.content || "";
-		if (text) return text.split(/\n+/).filter(Boolean).slice(0, 6);
-	} catch (e) {
-		console.warn("Extraction failed; using mock", e);
-	}
-	return [
-		"• Methods: Mock extraction pending live AI.",
-		"• Results: Mock extraction pending live AI.",
-		"• Data: Mock extraction pending live AI.",
-		"• Conclusions: Mock extraction pending live AI.",
-	];
-}*/
-
-// NEW, SIMPLIFIED handleSearch FUNCTION in script.js
 async function handleSearch(event) {
     event.preventDefault();
     const query = dom.queryInput.value.trim();
@@ -566,6 +459,20 @@ function init() {
 	updateSettingsGlow();
 	showTutorialOnce();
 	setStatus("Idle. Add your API keys in Settings or use mock mode.");
+
+    dom.copySummaryButton?.addEventListener("click", () => {
+        const text = dom.summary.innerText;
+        if (text && navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = dom.copySummaryButton.textContent;
+                dom.copySummaryButton.textContent = "Copied!";
+                setTimeout(() => dom.copySummaryButton.textContent = originalText, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                setStatus("Copy failed.");
+            });
+        }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {

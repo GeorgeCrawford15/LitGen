@@ -12,6 +12,11 @@
     --card: #ffffff;
     --shadow: 0 18px 50px rgba(0, 0, 0, 0.06);
     --accent: #111;
+    --btn-text: #ffffff;
+    --input-bg: #fafafa;
+    --pill-bg: #f1f1f1;
+    --pill-hover: #e5e5e5;
+    --secondary-bg: #f8f8f8;
 }
 
 .dark {
@@ -22,6 +27,11 @@
     --card: #16161a;
     --shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
     --accent: #f4f4f0;
+    --btn-text: #000000;
+    --input-bg: #1f1f22;
+    --pill-bg: #1f1f22;
+    --pill-hover: #2a2a2e;
+    --secondary-bg: #1f1f22;
     background: var(--bg);
     color: var(--fg);
 }
@@ -150,7 +160,7 @@ main, body {
     padding: 12px 18px;
     font-size: 0.95rem;
     background: var(--fg);
-    color: #fff;
+    color: var(--btn-text);
     border: 1px solid var(--fg);
     border-radius: 10px;
     cursor: pointer;
@@ -210,7 +220,7 @@ main, body {
     padding: 6px 10px;
     border-radius: 999px;
     background: var(--fg);
-    color: #fff;
+    color: var(--btn-text);
     font-size: 0.85rem;
     box-shadow: var(--shadow);
 }
@@ -224,6 +234,22 @@ main, body {
 .container.expanded .results-bubble-body {
     grid-template-columns: 1fr 200px;
     gap: 32px;
+}
+
+.bubble-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.bubble-header h4 {
+    margin-bottom: 0;
+}
+
+.small-copy-btn {
+    padding: 4px 10px;
+    font-size: 0.8rem;
 }
 
 .bubble-col h4 {
@@ -387,7 +413,8 @@ main, body {
     border: 1px solid var(--line);
     border-radius: 10px;
     font-size: 0.95rem;
-    background: #fafafa;
+    background: var(--input-bg);
+    color: var(--fg);
     font-family: "Libre Baskerville", "Times New Roman", serif;
 }
 
@@ -405,12 +432,12 @@ main, body {
     cursor: pointer;
     font-weight: 600;
     background: var(--fg);
-    color: #fff;
+    color: var(--btn-text);
     font-family: "Libre Baskerville", "Times New Roman", serif;
 }
 
 .settings-actions .secondary {
-    background: #f8f8f8;
+    background: var(--secondary-bg);
     color: var(--fg);
     border-color: var(--line);
 }
@@ -746,7 +773,7 @@ main, body {
 }
 
 .pill {
-    background: #f1f1f1;
+    background: var(--pill-bg);
     border-radius: 8px;
     padding: 8px 12px;
     font-size: 0.9rem;
@@ -849,7 +876,7 @@ main, body {
     border-radius: 10px;
     text-decoration: none;
     color: var(--fg);
-    background: #f7f7f7;
+    background: var(--pill-bg);
 }
 
 .tutorial-actions {
@@ -864,7 +891,7 @@ main, body {
     border-radius: 10px;
     border: 1px solid var(--fg);
     background: var(--fg);
-    color: #fff;
+    color: var(--btn-text);
     cursor: pointer;
 }
 

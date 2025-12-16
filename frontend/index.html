@@ -17,7 +17,7 @@
             </div>
         </header>
         <div id="app">
-            <h1>Welcome to LitGen, Your Literature Review Workspace</h1>
+            <h1>Welcome to LitGen, Your Literature Review Assistant</h1>
             <p>AI-Generated summaries of summaries and high impact research grounded with citations</p>
         </div>
         <div class="container">
@@ -28,7 +28,10 @@
                 </div>
                 <div class="results-bubble-body">
                     <div class="bubble-col">
-                        <h4>AI summary</h4>
+                        <div class="bubble-header">
+                            <h4>AI Lit Review</h4>
+                            <button id="copy-summary" class="ghost-btn small-copy-btn" title="Copy summary">Copy</button>
+                        </div>
                         <div id="summary-text" class="summary-content placeholder">Run a search to see the summary.</div>
                     </div>
                     <!--
